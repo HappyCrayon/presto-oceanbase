@@ -18,6 +18,7 @@ import com.facebook.presto.common.type.VarcharType;
 import com.facebook.presto.plugin.jdbc.BaseJdbcClient;
 import com.facebook.presto.plugin.jdbc.BaseJdbcConfig;
 import com.facebook.presto.plugin.jdbc.ConnectionFactory;
+import com.facebook.presto.plugin.jdbc.DriverConnectionFactory;
 import com.facebook.presto.plugin.jdbc.JdbcConnectorId;
 import com.facebook.presto.plugin.jdbc.JdbcErrorCode;
 import com.facebook.presto.plugin.jdbc.JdbcIdentity;
@@ -28,6 +29,7 @@ import com.facebook.presto.spi.ConnectorSession;
 import com.facebook.presto.spi.PrestoException;
 import com.facebook.presto.spi.SchemaTableName;
 import com.facebook.presto.spi.StandardErrorCode;
+import com.oceanbase.jdbc.Driver;
 
 import javax.inject.Inject;
 import java.sql.Connection;
@@ -37,8 +39,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.Locale;
-import java.util.Objects;
 import java.util.Optional;
+import java.util.Properties;
 
 /**
  * Implementation of OracleClient. It describes table, schemas and columns behaviours.
@@ -53,12 +55,29 @@ public class OceanBaseClient extends BaseJdbcClient {
     private final int numberDefaultScale;
 
     @Inject
-    public OceanBaseClient(JdbcConnectorId connectorId, BaseJdbcConfig config, OceanBaseConfig oceanBaseConfig, ConnectionFactory connectionFactory) {
-        super(connectorId, config, "\"", connectionFactory);
-        Objects.requireNonNull(oceanBaseConfig, "oceanbase config is null");
+    public OceanBaseClient(JdbcConnectorId connectorId, BaseJdbcConfig config, OceanBaseConfig oceanBaseConfig) throws SQLException {
+        super(connectorId, config, "`", connectionFactory(config, oceanBaseConfig));
         this.synonymsEnabled = oceanBaseConfig.isSynonymsEnabled();
         this.numberDefaultScale = oceanBaseConfig.getNumberDefaultScale();
     }
+
+    private static ConnectionFactory connectionFactory(BaseJdbcConfig config, OceanBaseConfig oceanBaseConfig) throws SQLException {
+        Properties connectionProperties = DriverConnectionFactory.basicConnectionProperties(config);
+        connectionProperties.setProperty("useInformationSchema", "true");
+        connectionProperties.setProperty("nullCatalogMeansCurrent", "false");
+        connectionProperties.setProperty("useUnicode", "true");
+        connectionProperties.setProperty("characterEncoding", "utf8");
+        connectionProperties.setProperty("tinyInt1isBit", "false");
+        return new DriverConnectionFactory(new Driver(), config.getConnectionUrl(), Optional.ofNullable(config.getUserCredentialName()), Optional.ofNullable(config.getPasswordCredentialName()), connectionProperties);
+    }
+
+//    @Inject
+//    public OceanBaseClient(JdbcConnectorId connectorId, BaseJdbcConfig config, OceanBaseConfig oceanBaseConfig, ConnectionFactory connectionFactory) {
+//        super(connectorId, config, "\"", connectionFactory);
+//        Objects.requireNonNull(oceanBaseConfig, "oceanbase config is null");
+//        this.synonymsEnabled = oceanBaseConfig.isSynonymsEnabled();
+//        this.numberDefaultScale = oceanBaseConfig.getNumberDefaultScale();
+//    }
 
     private String[] getTableTypes() {
         return this.synonymsEnabled ? new String[]{"TABLE", "VIEW", "SYNONYM"} : new String[]{"TABLE", "VIEW"};

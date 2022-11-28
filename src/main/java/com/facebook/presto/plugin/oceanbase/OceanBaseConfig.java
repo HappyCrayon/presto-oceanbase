@@ -13,7 +13,8 @@
  */
 package com.facebook.presto.plugin.oceanbase;
 
-import io.airlift.configuration.Config;
+
+import com.facebook.airlift.configuration.Config;
 
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;

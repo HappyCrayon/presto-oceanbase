@@ -13,21 +13,12 @@
  */
 package com.facebook.presto.plugin.oceanbase;
 
-import com.alipay.oceanbase.jdbc.Driver;
 import com.facebook.airlift.configuration.ConfigBinder;
 import com.facebook.presto.plugin.jdbc.BaseJdbcConfig;
-import com.facebook.presto.plugin.jdbc.ConnectionFactory;
-import com.facebook.presto.plugin.jdbc.DriverConnectionFactory;
 import com.facebook.presto.plugin.jdbc.JdbcClient;
 import com.google.inject.Binder;
 import com.google.inject.Module;
-import com.google.inject.Provides;
 import com.google.inject.Scopes;
-import com.google.inject.Singleton;
-
-import java.sql.SQLException;
-import java.util.Optional;
-import java.util.Properties;
 
 
 /**
@@ -47,11 +38,11 @@ public class OceanBaseClientModule implements Module {
 		ConfigBinder.configBinder(binder).bindConfig(OceanBaseConfig.class);
 	}
 
-	@Provides
-	@Singleton
-	public static ConnectionFactory connectionFactory(BaseJdbcConfig config, OceanBaseConfig oceanBaseConfig) throws SQLException {
-		Properties connectionProperties = new Properties();
-		connectionProperties.setProperty("includeSynonyms", String.valueOf(oceanBaseConfig.isSynonymsEnabled()));
-		return new DriverConnectionFactory(new Driver(), config.getConnectionUrl(), Optional.empty(), Optional.empty(), connectionProperties);
-	}
+//	@Provides
+//	@Singleton
+//	public static ConnectionFactory connectionFactory(BaseJdbcConfig config, OceanBaseConfig oceanBaseConfig) throws SQLException {
+//		Properties connectionProperties = new Properties();
+//		connectionProperties.setProperty("includeSynonyms", String.valueOf(oceanBaseConfig.isSynonymsEnabled()));
+//		return new DriverConnectionFactory(new Driver(), config.getConnectionUrl(), Optional.empty(), Optional.empty(), connectionProperties);
+//	}
 }
