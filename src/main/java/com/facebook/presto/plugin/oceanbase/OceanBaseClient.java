@@ -13,6 +13,7 @@
  */
 package com.facebook.presto.plugin.oceanbase;
 
+import com.facebook.airlift.log.Logger;
 import com.facebook.presto.common.type.DecimalType;
 import com.facebook.presto.common.type.VarcharType;
 import com.facebook.presto.plugin.jdbc.BaseJdbcClient;
@@ -54,9 +55,11 @@ public class OceanBaseClient extends BaseJdbcClient {
     private final boolean synonymsEnabled;
     private final int numberDefaultScale;
 
+    private static final Logger log = Logger.get(OceanBaseClient.class);
+
     @Inject
     public OceanBaseClient(JdbcConnectorId connectorId, BaseJdbcConfig config, OceanBaseConfig oceanBaseConfig) throws SQLException {
-        super(connectorId, config, "`", connectionFactory(config, oceanBaseConfig));
+        super(connectorId, config, "", connectionFactory(config, oceanBaseConfig));
         this.synonymsEnabled = oceanBaseConfig.isSynonymsEnabled();
         this.numberDefaultScale = oceanBaseConfig.getNumberDefaultScale();
     }
@@ -89,6 +92,52 @@ public class OceanBaseClient extends BaseJdbcClient {
         String escape = metadata.getSearchStringEscape();
         return metadata.getTables(connection.getCatalog(), escapeNamePattern(schemaName, Optional.of(escape)).orElse(null), escapeNamePattern(tableName, Optional.of(escape)).orElse(null), this.getTableTypes());
     }
+
+//    @Override
+//    public List<JdbcColumnHandle> getColumns(ConnectorSession session, JdbcTableHandle tableHandle)
+//    {
+//        log.debug("getColumns=======================");
+//        try (Connection connection = connectionFactory.openConnection(JdbcIdentity.from(session))) {
+//            try (ResultSet resultSet = getColumns(tableHandle, connection.getMetaData())) {
+//                List<JdbcColumnHandle> columns = new ArrayList<>();
+//                while (resultSet.next()) {
+//                    JdbcTypeHandle typeHandle = new JdbcTypeHandle(
+//                            resultSet.getInt("DATA_TYPE"),
+//                            resultSet.getInt("COLUMN_SIZE"),
+//                            resultSet.getInt("DECIMAL_DIGITS"));
+//
+//                    Optional<ReadMapping> columnMapping = toPrestoType(session, typeHandle);
+//                    // skip unsupported column types
+//                    log.debug(resultSet.getString("COLUMN_NAME")  + ":" + columnMapping.isPresent() + "|" + resultSet.getInt("DATA_TYPE")+ "|" + resultSet.getInt("COLUMN_SIZE")+ "|" + resultSet.getInt("DECIMAL_DIGITS"));
+//                    if (columnMapping.isPresent()) {
+//                        String columnName = resultSet.getString("COLUMN_NAME");
+//                        boolean nullable = columnNullable == resultSet.getInt("NULLABLE");
+//                        Optional<String> comment = Optional.ofNullable(emptyToNull(resultSet.getString("REMARKS")));
+//                        columns.add(new JdbcColumnHandle(connectorId, columnName, typeHandle, columnMapping.get().getType(), nullable, comment));
+//                    }
+//                }
+//                if (columns.isEmpty()) {
+//                    // In rare cases (e.g. PostgreSQL) a table might have no columns.
+//                    throw new TableNotFoundException(tableHandle.getSchemaTableName());
+//                }
+//                return ImmutableList.copyOf(columns);
+//            }
+//        }
+//        catch (SQLException e) {
+//            throw new PrestoException(JDBC_ERROR, e);
+//        }
+//    }
+//
+//    private static ResultSet getColumns(JdbcTableHandle tableHandle, DatabaseMetaData metadata)
+//            throws SQLException
+//    {
+//        Optional<String> escape = Optional.ofNullable(metadata.getSearchStringEscape());
+//        return metadata.getColumns(
+//                tableHandle.getCatalogName(),
+//                escapeNamePattern(Optional.ofNullable(tableHandle.getSchemaName()), escape).orElse(null),
+//                escapeNamePattern(Optional.ofNullable(tableHandle.getTableName()), escape).orElse(null),
+//                null);
+//    }
 
     @Override
     public PreparedStatement getPreparedStatement(Connection connection, String sql) throws SQLException {
